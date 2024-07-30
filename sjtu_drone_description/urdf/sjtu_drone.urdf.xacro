@@ -4,14 +4,13 @@
   <!-- Need argument to get from launch file -->
   <xacro:arg name="params_path" default="$(find sjtu_drone_bringup)/config/drone.yaml"/> 
 
-  <!-- Need seperate property for xacro inorder processing -->
+  <!-- Need separate property for xacro inorder processing -->
   <xacro:property name="params_path" value="$(arg params_path)"/> 
 
   <!-- Read in the yaml dict as mp (short for model parameters) -->
   <xacro:property name="mp" value="${xacro.load_yaml(params_path)}"/> 
 
   <xacro:property name="M_PI" value="3.14159265359" />
-
 
   <link name="base_footprint"/>
   <joint name="base_footprint_joint" type="fixed">
@@ -49,7 +48,6 @@
   </joint>
   <link name="sonar_link"/>
 
-
   <joint name="front_cam_joint" type="fixed">
     <origin rpy="0 0 0" xyz="0.2 0 0"/>
     <parent link="base_link" />
@@ -64,6 +62,12 @@
   </joint>
   <link name="bottom_cam_link"/>
 
+  <joint name="lidar_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0.1"/>
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+  </joint>
+  <link name="lidar_link"/>
 
   <gazebo>
     <plugin name='simple_drone' filename='libplugin_drone.so'>
@@ -140,7 +144,6 @@
       </plugin>
     </sensor>
   </gazebo>
-
 
   <!-- Sonar sensor in 100fps -->
   <gazebo reference="sonar_link">
@@ -221,7 +224,6 @@
     </sensor>
   </gazebo>
 
-
   <!-- downward looking camera -->
   <gazebo reference="bottom_cam_link">
     <sensor name="down_camera" type="camera">
@@ -258,7 +260,6 @@
     </sensor>
   </gazebo>
 
-
   <gazebo reference="base_link">
     <sensor name="gps" type="gps">
       <always_on>1</always_on>
@@ -289,7 +290,6 @@
     </sensor>
   </gazebo>
 
-
   <gazebo reference="base_link">
     <sensor name="collision_sensor" type="contact">
       <update_rate>100.0</update_rate>
@@ -306,4 +306,40 @@
       </plugin>
     </sensor>
   </gazebo>
+
+  <!-- LiDAR sensor -->
+<gazebo reference="lidar_link">
+  <sensor name="lidar_sensor" type="ray">
+    <visualize>true</visualize>
+    <update_rate>10.0</update_rate>
+    <ray>
+      <scan>
+        <horizontal>
+          <samples>360</samples>
+          <resolution>1</resolution>
+          <min_angle>-3.14159</min_angle>
+          <max_angle>3.14159</max_angle>
+        </horizontal>
+      </scan>
+      <range>
+        <min>0.1</min>
+        <max>30.0</max>
+        <resolution>0.01</resolution>
+      </range>
+      <noise>
+        <type>gaussian</type>
+        <mean>0.0</mean>
+        <stddev>0.01</stddev>
+      </noise>
+    </ray>
+    <plugin name="gazebo_ros_ray_sensor" filename="libgazebo_ros_ray_sensor.so">
+      <ros>
+        <namespace>${mp['namespace']}</namespace>
+        <remapping>~/scan:=scan</remapping>
+      </ros>
+      <frame_name>${mp['namespace']}/lidar_link</frame_name>
+    </plugin>
+  </sensor>
+</gazebo>
+
 </robot>
